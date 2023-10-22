@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-# CORS(app, resources={r"/": {"origins": ""}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route('/')
@@ -24,21 +24,37 @@ def index():
 def generate_smart_contract():
     data = request.get_json()
     contract_type = data['type']
-    usecase = data['description']
+    contract_description = data['description']
     contract_parties = data['parties']
     contract_conditions = data['conditions']
     contract_payments = data['payments']
     contract_completions = data['completions']
 
 
+
     prompt_template = """
     Dear LLM,
-    You are an expert in creating smart contracts. Your knowledge and understanding of blockchain technology, particularly Stacks, is unparalleled. I am in need of your expertise to create a smart contract.
-    The contract should be written in Clarity and it should be compatible with the latest version of the Stacks 2.0 blockchain.
-    Please ensure that the contract is secure and follows best practices for Clarity development. I trust your judgment in creating a contract that is efficient, secure, and easy to interact with.
-    Generate accurate smart contract is for the following application {usecase} and dont stop untill you finish generating the complete contract and at the end say it is the END
+
+    I hope this message finds you well. Your expertise in creating smart contracts has come highly recommended, and I am particularly impressed by your deep understanding of blockchain technology, specifically in the Stacks ecosystem.
+
+    I am reaching out to seek your assistance in crafting a smart contract that adheres to best practices in Clarity language and is compatible with the latest version of Stacks 2.0 blockchain.
+
+    Contract Requirements:
+
+    - **Type**: {contract_type}
+    - **Description**: {contract_description}
+    - **Parties Involved**: {contract_parties}
+    - **Conditions**: {contract_conditions}
+    - **Payment Details**: {contract_payments}
+    - **Milestones and Completions**: {contract_completions}
+
+    I place great trust in your judgment to develop a contract that is not only secure but also efficient and user-friendly. Could you please ensure that the smart contract satisfies the above requirements?
+
+    Your task is to generate a smart contract for the specific application: {contract_description}. Kindly proceed with the development and inform me when the contract is complete by indicating 'END'.
+
+    Thank you for your attention to this matter. I look forward to your positive response.
     
-    An example of a smart contract is given below:
+    An example of a smart contract is given below. using this as a template, please generate a smart contract for the specific application: {contract_description}. Only output the Clarity Code.
     
     ;; An on-chain counter that stores a count for each individual
     
@@ -131,37 +147,22 @@ def generate_smart_contract():
     )
     """
 
-    # prompt_template = """
-    # Dear LLM,
-    #
-    # I hope this message finds you well. Your expertise in creating smart contracts has come highly recommended, and I am particularly impressed by your deep understanding of blockchain technology, specifically in the Stacks ecosystem.
-    #
-    # I am reaching out to seek your assistance in crafting a smart contract that adheres to best practices in Clarity language and is compatible with the latest version of Stacks 2.0 blockchain.
-    #
-    # Contract Requirements:
-    #
-    # - **Type**: {contract_type}
-    # - **Description**: {contract_description}
-    # - **Parties Involved**: {contract_parties}
-    # - **Conditions**: {contract_conditions}
-    # - **Payment Details**: {contract_payments}
-    # - **Milestones and Completions**: {contract_completions}
-    #
-    # I place great trust in your judgment to develop a contract that is not only secure but also efficient and user-friendly. Could you please ensure that the smart contract satisfies the above requirements?
-    #
-    # Your task is to generate a smart contract for the specific application: {contract_description}. Kindly proceed with the development and inform me when the contract is complete by indicating 'END'.
-    #
-    # Thank you for your attention to this matter. I look forward to your positive response.
-    # """
+    inputs = {
+        "contract_type": contract_type,
+        "contract_description": contract_description,
+        "contract_parties": contract_parties,
+        "contract_conditions": contract_conditions,
+        "contract_payments": contract_payments,
+        "contract_completions": contract_completions
+    }
 
-    prompt = PromptTemplate(template=prompt_template, input_variables=["usecase"])
-    llm = AI21(model="j2-ultra")
-    # llm = OpenAIChat(temperature=0.2,model='gpt-3.5-turbo-16k')
+    prompt = PromptTemplate(template=prompt_template, input_variables=["contract_type, contract_description,contract_parties,contract_conditions,contract_payments,contract_completions"])
+    #llm = AI21(model="j2-ultra")
+    llm = OpenAIChat(temperature=0.2,model='gpt-3.5-turbo-16k')
     llm_chain = LLMChain(llm=llm, prompt=prompt)
     # prompt=PromptTemplate.from_template(prompt_template)
-    llm_out = llm_chain(usecase)
-    print(llm_out)
-    return jsonify({"LLM Says": llm_out}), 200
+    print(llm_chain(inputs))
+    return jsonify({"LLM Says": str(llm_chain)}), 200
 
 
 # find vulnerabilities in smart contract
@@ -208,8 +209,8 @@ def talk_to_user_about_smart_contract():
     Here is the smart contract: {smart_contract} and make any changes user wants you to do and return the altered full contract.
     """
     prompt = PromptTemplate(template=prompt_template, input_variables=["usecase", "smart_contract"])
-    llm = AI21(model="j2-ultra")
-    # llm = OpenAIChat(temperature=0.2,model='gpt-3.5-turbo-16k')prompt = PromptTemplate(data['prompt'])
+    # llm = AI21(model="j2-ultra")
+    llm = OpenAIChat(temperature=0.2,model='gpt-3.5-turbo-16k')
     llm_chain = LLMChain(llm=llm, prompt=prompt)
     # prompt=PromptTemplate.from_template(prompt_template)
     llm_out = llm_chain(usecase, smart_contract)
